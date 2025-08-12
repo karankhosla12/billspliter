@@ -2,26 +2,27 @@
 import express from "express";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
-import cors from "cors"; // ✅ Import CORS
+import cors from "cors"; // ✅ Enable CORS
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Enable CORS for all origins (or restrict to your frontend domain)
+// ✅ Enable CORS for all origins (change "*" to your frontend domain in production)
 app.use(cors({
-    origin: "*", // Change to your frontend domain for security (e.g., "https://yourdomain.com")
+    origin: "*",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Parse incoming JSON
-app.use(express.json());
+// ✅ Increase payload size limit to prevent "413 Content Too Large"
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Hugging Face client using OpenAI SDK
 const client = new OpenAI({
     baseURL: "https://router.huggingface.co/v1",
-    apiKey: process.env.HF_TOKEN, // Set this in Render's environment variables
+    apiKey: process.env.HF_TOKEN // Set in Render's environment variables
 });
 
 // API endpoint
@@ -41,8 +42,7 @@ app.post("/api/analyze", async (req, res) => {
                     content: [
                         {
                             type: "text",
-                            text: prompt ||
-                                "Convert the image of a bill into key-value pairs, including taxes as a key-value pair."
+                            text: prompt || "Convert the image of a bill into key-value pairs, including taxes as a key-value pair."
                         },
                         {
                             type: "image_url",
