@@ -21,22 +21,33 @@ app.post("/api/analyze", async (req, res) => {
     try {
         const { prompt, imageUrl } = req.body;
 
+        if (!imageUrl) {
+            return res.status(400).json({ error: "imageUrl is required" });
+        }
+
         const chatCompletion = await client.chat.completions.create({
             model: "zai-org/GLM-4.5V:novita",
             messages: [
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: prompt || "Convert the image of a bill into key value pairs along with the taxes as a key value pair" },
-                        { type: "image_url", image_url: { url: imageUrl } },
-                    ],
-                },
-            ],
+                        {
+                            type: "text",
+                            text: prompt ||
+                                "Convert the image of a bill into key-value pairs, including taxes as a key-value pair."
+                        },
+                        {
+                            type: "image_url",
+                            image_url: { url: imageUrl }
+                        }
+                    ]
+                }
+            ]
         });
 
         res.json(chatCompletion.choices[0].message);
     } catch (error) {
-        console.error(error);
+        console.error("Error in /api/analyze:", error);
         res.status(500).json({ error: error.message });
     }
 });
