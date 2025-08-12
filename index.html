@@ -456,8 +456,11 @@
             model: "zai-org/GLM-4.5V:novita"
         };
 
-        // Debug API key availability
-        console.log('API Key available:', !!API_CONFIG.apiKey);
+        // Debug API key availability (without showing the actual key)
+        console.log('API Key configured:', !!API_CONFIG.apiKey);
+        if (!API_CONFIG.apiKey) {
+            console.warn('⚠️ No API key found. Make sure GitHub Actions deployed correctly or create a local config.js file.');
+        }
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
