@@ -53,6 +53,7 @@
             transition: all 0.3s ease;
             cursor: pointer;
             background: rgba(102, 126, 234, 0.05);
+            user-select: none;
         }
 
         .upload-area:hover {
@@ -451,14 +452,12 @@
         // API Configuration - Using environment variables for security
         const API_CONFIG = {
             baseURL: "https://router.huggingface.co/v1",
-            apiKey: process.env.HUGGINGFACE_API_KEY || window.HUGGINGFACE_API_KEY || "",
+            apiKey: window.HUGGINGFACE_API_KEY || "",
             model: "zai-org/GLM-4.5V:novita"
         };
 
-        // Fallback configuration check
-        if (!API_CONFIG.apiKey) {
-            console.warn("⚠️ API Key not found. Please set HUGGINGFACE_API_KEY environment variable.");
-        }
+        // Debug API key availability
+        console.log('API Key available:', !!API_CONFIG.apiKey);
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
@@ -481,21 +480,38 @@
         let attendees = [];
         let billData = null;
 
-        // Event Listeners
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('drop', handleDrop);
-        uploadArea.addEventListener('dragleave', handleDragLeave);
-        fileInput.addEventListener('change', handleFileSelect);
-        analyzeBtn.addEventListener('click', analyzeImage);
-        clearBtn.addEventListener('click', clearSelection);
-        downloadBtn.addEventListener('click', downloadPDF);
-        attendeesInput.addEventListener('input', handleAttendeesInput);
+        // Event Listeners - Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up event listeners'); // Debug log
+            
+            // Check if all elements exist
+            console.log('Upload area:', !!uploadArea);
+            console.log('File input:', !!fileInput);
+            console.log('Attendees input:', !!attendeesInput);
+            
+            uploadArea.addEventListener('click', () => {
+                console.log('Upload area clicked'); // Debug log
+                fileInput.click();
+            });
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            fileInput.addEventListener('change', handleFileSelect);
+            analyzeBtn.addEventListener('click', analyzeImage);
+            clearBtn.addEventListener('click', clearSelection);
+            downloadBtn.addEventListener('click', downloadPDF);
+            attendeesInput.addEventListener('input', handleAttendeesInput);
+        });
 
         function handleAttendeesInput(e) {
             const input = e.target.value.trim();
+            console.log('Attendees input:', input); // Debug log
+            
             if (input) {
-                attendees = input.split(',').map(name => name.trim()).filter(name => name);
+                attendees = input.split(',')
+                    .map(name => name.trim())
+                    .filter(name => name.length > 0);
+                console.log('Parsed attendees:', attendees); // Debug log
                 updateAttendeesPreview();
             } else {
                 attendees = [];
@@ -504,7 +520,9 @@
         }
 
         function updateAttendeesPreview() {
+            console.log('Updating preview for attendees:', attendees); // Debug log
             attendeesPreview.innerHTML = '';
+            
             attendees.forEach(name => {
                 const tag = document.createElement('div');
                 tag.className = 'attendee-tag';
@@ -533,13 +551,17 @@
         }
 
         function handleFileSelect(e) {
+            console.log('File select triggered'); // Debug log
             const file = e.target.files[0];
             if (file) {
+                console.log('File selected:', file.name); // Debug log
                 handleFile(file);
             }
         }
 
         function handleFile(file) {
+            console.log('Handling file:', file.name, file.type, file.size); // Debug log
+            
             // Validate file type
             if (!file.type.startsWith('image/')) {
                 showError('Please select a valid image file.');
@@ -557,6 +579,7 @@
             // Create preview
             const reader = new FileReader();
             reader.onload = function(e) {
+                console.log('File loaded successfully'); // Debug log
                 imageDataUrl = e.target.result;
                 previewImage.src = imageDataUrl;
                 previewContainer.style.display = 'block';
@@ -564,6 +587,12 @@
                 clearBtn.style.display = 'inline-block';
                 hideError();
             };
+            
+            reader.onerror = function(e) {
+                console.error('File reading error:', e); // Debug log
+                showError('Error reading file. Please try again.');
+            };
+            
             reader.readAsDataURL(file);
         }
 
