@@ -2,10 +2,18 @@
 import express from "express";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
+import cors from "cors"; // ✅ Import CORS
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ✅ Enable CORS for all origins (or restrict to your frontend domain)
+app.use(cors({
+    origin: "*", // Change to your frontend domain for security (e.g., "https://yourdomain.com")
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 // Parse incoming JSON
 app.use(express.json());
