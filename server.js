@@ -1,34 +1,39 @@
-const express = require("express");
-const fetch = require("node-fetch"); // Install with: npm install node-fetch express
-const app = express();
-const PORT = process.env.PORT || 3000;
+import express from "express";
+import { OpenAI } from "openai";
 
-// Middleware to parse JSON
+const app = express();
 app.use(express.json());
 
-// Proxy endpoint for Hugging Face
-app.post("/api/analyze", async (req, res) => {
-  try {
-    const { image } = req.body;
-
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/your-model-here",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ inputs: image }),
-      }
-    );
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+const client = new OpenAI({
+    baseURL: "https://router.huggingface.co/v1",
+    apiKey: process.env.HF_TOKEN, // Set in Render environment variables
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.post("/api/analyze", async (req, res) => {
+    try {
+        const { imageUrl } = req.body;
+
+        const chatCompletion = await client.chat.completions.create({
+            model: "zai-org/GLM-4.5V:novita", // Hugging Face model
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "Convert the image of a bill into key value pairs along with the taxes as a key value pair" },
+                        { type: "image_url", image_url: { url: imageUrl } },
+                    ],
+                },
+            ],
+        });
+
+        res.json(chatCompletion.choices[0].message);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
