@@ -3,162 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bill Analyzer - Upload & Extract</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        /* [Keep all your existing CSS styles - too long to include fully here] */
-        /* Important ones: container, upload-area, buttons, results styling */
-        
-    </style>
+    <title>Bill Splitter</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- [Keep your existing HTML structure] -->
     <div class="container">
-        <!-- Your existing HTML elements here -->
+        <h1>Bill Splitter</h1>
+        
+        <div class="upload-section">
+            <h2>Upload Bill Image</h2>
+            <input type="file" id="billImage" accept="image/*">
+            <button id="analyzeBtn">Analyze Bill</button>
+            <div id="imagePreview"></div>
+        </div>
+        
+        <div class="attendees-section">
+            <h2>Attendees</h2>
+            <textarea id="attendees" placeholder="Enter names separated by commas (e.g., Alice, Bob, Charlie)"></textarea>
+        </div>
+        
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h2>Split the Bill</h2>
+            <div class="bill-summary">
+                <h3>Bill Summary</h3>
+                <div id="billSummary"></div>
+            </div>
+            <div class="split-table-container">
+                <table id="splitTable">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <!-- Attendee columns will be added dynamically -->
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody"></tbody>
+                    <tfoot id="totalsRow"></tfoot>
+                </table>
+            </div>
+            <div class="totals-section">
+                <h3>Individual Totals</h3>
+                <div id="individualTotals"></div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // ===== Configuration =====
-        const BACKEND_URL = "https://billspliter.onrender.com"; // 👈 Replace with your Render URL
-
-        // ===== DOM Elements =====
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        // [All your other DOM element references]
-
-        // ===== State =====
-        let selectedFile = null;
-        let imageDataUrl = null;
-        let attendees = [];
-        let billData = null;
-
-        // ===== Event Listeners =====
-        document.addEventListener('DOMContentLoaded', function() {
-            uploadArea.addEventListener('click', () => fileInput.click());
-            // [All your other event listeners]
-        });
-
-        // ===== Core Functions =====
-        async function analyzeImage() {
-            if (!imageDataUrl) {
-                showError('Please select an image first.');
-                return;
-            }
-
-            showLoading();
-            hideError();
-            hideResults();
-
-            try {
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: imageDataUrl })
-                });
-
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                
-                const data = await response.json();
-                billData = data;
-                displayBillResults(data);
-                
-                // Enable download button if attendees exist
-                if (attendees.length > 0) {
-                    document.getElementById('downloadBtn').style.display = 'inline-block';
-                }
-                
-            } catch (err) {
-                console.error('Analysis error:', err);
-                showError(`Analysis failed: ${err.message}`);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function displayBillResults(data) {
-            // Clear previous results
-            billSummary.innerHTML = '';
-            splittingTable.innerHTML = '';
-
-            // 1. Display Bill Summary
-            if (data.bill_summary) {
-                billSummary.innerHTML = `
-                    <div class="bill-summary">
-                        <h4>💰 Bill Summary</h4>
-                        ${Object.entries(data.bill_summary).map(([key, value]) => `
-                            <div class="summary-row">
-                                <span>${formatKey(key)}:</span>
-                                <span>₹${value?.toFixed(2) || '0.00'}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-
-            // 2. Display Splitting Table (if attendees exist)
-            if (attendees.length > 0 && data.items) {
-                splittingTable.innerHTML = buildSplittingTable(data.items, data.bill_summary);
-            } else if (data.items) {
-                splittingTable.innerHTML = `
-                    <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 10px; margin-top: 20px;">
-                        <h4>👥 Add attendees above to enable bill splitting!</h4>
-                    </div>
-                `;
-            }
-
-            results.style.display = 'block';
-            results.classList.add('success-animation');
-        }
-
-        function buildSplittingTable(items, summary) {
-            // [Your existing table building logic]
-            // Include: 
-            // - Item rows with checkboxes
-            // - Tax calculations
-            // - Per-person totals
-        }
-
-        // ===== Helper Functions =====
-        function formatKey(key) {
-            return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        }
-
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('analyzeBtn').disabled = true;
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('analyzeBtn').disabled = false;
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
-
-        // [Include all your other existing functions]
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
