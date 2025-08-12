@@ -1,0 +1,1 @@
+window.HUGGINGFACE_API_KEY = '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';
